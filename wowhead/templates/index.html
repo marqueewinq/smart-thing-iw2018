@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Hello world
+{% endblock title %}
+
+{% block header %}
+  Flask Dockerized
+{% endblock header %}
+
+{% block content %}
+	Users:
+	<ul>
+	{% for user in user_list %}
+		<li> {{user.token}} </li>
+	{% endfor %}
+	</ul>
+
+	Post data:
+	<ul>
+	{% for item in data_list %}
+		<li> created by {{item.author}} on {{item.created}}: {{item.data}} </li>
+	{% endfor %}
+	</ul>
+{% endblock content %}
