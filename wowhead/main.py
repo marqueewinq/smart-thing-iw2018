@@ -1,9 +1,11 @@
 import json
+import requests
+import os
 from flask import Flask, flash, g, redirect, render_template, request, url_for
 from werkzeug.exceptions import abort
 
 from db import get_db, init_db
-from utility import get_new_token
+from utility import get_new_token, get_data_list
 
 app = Flask(__name__)
 
@@ -11,12 +13,22 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     """Show all the posts, most recent first."""
+
     db = get_db()
-    data_list = db.execute(
-        "SELECT id, author_id, created, data from post ORDER BY created DESC"
-    ).fetchall()
+    data_list = json.dumps(get_data_list())
     user_list = db.execute("SELECT id, token FROM user").fetchall()
-    return render_template("index.html", data_list=data_list, user_list=user_list)
+    caller_url = os.environ.get("BASE_URL")
+    return render_template(
+        "index.html",
+        data_list=data_list,
+        user_list=user_list,
+        caller_url=caller_url,
+    )
+
+
+@app.route("/api/get")
+def api_get():
+    return json.dumps(get_data_list())
 
 
 @app.route("/api/register")
@@ -35,7 +47,6 @@ def api_register():
 @app.route("/api/add", methods=["POST"])
 def api_add():
     js = request.json
-    print("+ {}".format(js))
     if type(js) != dict or "token" not in js:
         return json.dumps(
             {"success": False, "detail": "No token provided"},

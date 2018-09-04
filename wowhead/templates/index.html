@@ -5,21 +5,107 @@
 {% endblock title %}
 
 {% block header %}
-  Flask Dockerized
+  <h3>Plot</h3>
 {% endblock header %}
 
 {% block content %}
-	Users:
-	<ul>
-	{% for user in user_list %}
-		<li> {{user.token}} </li>
-	{% endfor %}
-	</ul>
+    <p><svg width="960" height="500"></svg></p>
 
-	Post data:
-	<ul>
-	{% for item in data_list %}
-		<li> created by {{item.author}} on {{item.created}}: {{item.data}} </li>
-	{% endfor %}
-	</ul>
+    <script src="http://d3js.org/d3.v3.js"></script>
+
+<script>
+
+    draw_stats();
+
+    function draw_stats(){
+        var data = get_data()
+        k = 4
+        console.log(data)
+
+        data.forEach(function(d) {
+            d.y = +d.value;
+            d.x = +d.index;
+            
+        });
+
+        var nest = d3.nest()
+               .key(function(d){ return d.key});
+        var n = data.length, // number of layers, online, guestbook & museum
+
+            stack = d3.layout.stack().offset("wiggle")
+              .values(function(d) { return d.values; }),
+
+            //group data by key
+            layers0 = stack(nest.entries(data)),
+            layers1 = stack(nest.entries(data));
+
+        var m = layers0[0].values.length; // number of samples per layer
+
+        var yDomain = d3.max(layers0.concat(layers1), function(layer) { 
+            return d3.max(layer.values, 
+                function(d) { 
+                  return d.y0 + d.y; 
+                }); 
+        });
+
+        var width = 800,
+            height = 600;
+
+        var x = d3.scale.linear()
+        .domain([0, m - 1])
+        .range([0, width]);
+
+        var y = d3.scale.linear()
+        .domain([0, yDomain])
+        .range([height, 0]);
+
+        var color = d3.scale.linear()
+            .range(["#cf0000", "#ffe000"]);
+
+        var area = d3.svg.area()
+          .x(
+            function(d) { 
+              return x(d.x); 
+            })
+            .y0(function(d) { 
+              return y(d.y0); 
+            })
+            .y1(function(d) { 
+              return y(d.y0 + d.y); 
+            }); 
+
+        var svg = d3.select("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        color_count = 0
+        svg.selectAll("path")
+            .data(layers0)
+            .enter()
+            .append("path")
+            .attr("d", function(d) { return area(d.values); })
+            .transition()
+            .style("fill", function() { color_count += 1.0 / k; return color(color_count); });
+
+    }
+
+    function get_data()
+    {
+        return JSON.parse(httpGet("http://localhost:5000/api/get"))
+    }
+
+    function httpGet(theUrl)
+    {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
+        xmlHttp.send( null );
+        return xmlHttp.responseText;
+    }
+
+
+    //setInterval(draw_stats, 200); // ms
+
+
+
+</script>
 {% endblock content %}
