@@ -91,7 +91,7 @@
 
     function get_data()
     {
-        return JSON.parse(httpGet("http://localhost:5000/api/get"))
+        return JSON.parse(httpGet({{caller_url}}))
     }
 
     function httpGet(theUrl)
